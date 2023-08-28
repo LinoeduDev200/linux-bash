@@ -1,0 +1,7 @@
+teams dotnet-sdk-6.0 node encfs
+python3-dev zotero nala fslint
+exa gedit adb vscode 
+nmp make git git-desktop
+tilda chrome-gnome-shell notion-app
+onlyoffice discord calibre
+Gnome-Encfs-Manager xampp
