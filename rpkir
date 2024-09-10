@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Função para verificar se um pacote está instalado
+check_installed() {
+    local package=$1
+    echo "Verificando se o pacote '$package' está instalado..."
+    dpkg -l | grep  "$package" && return 0  # Verifica com apt
+    flatpak list | grep  "$package" && return 0  # Verifica com flatpak
+    snap list | grep "$package" && return 0  # Verifica com snap
+    pacstall -L | grep "$package" && return 0  # Verifica com pacstall
+    return 1  # Não encontrado
+}
+
+# Função para instalar pacotes necessários
+install_dependencies() {
+    for pkg in curl bash; do
+        if ! dpkg -l | grep -qw "$pkg"; then
+            sudo apt install -y "$pkg"
+        fi
+    done
+
+    # Verifica e instala o pacstall se não estiver instalado
+    if ! check_installed "pacstall"; then
+        sudo bash -c "$(curl -fsSL https://pacstall.dev/q/install)"
+    fi
+
+    # Verifica e instala rhino-pkg-git se não estiver instalado
+    if ! check_installed "rhino-pkg-git"; then
+        echo "Instalando rhino-pkg-git..."
+        pacstall -I rhino-pkg-git
+    else
+        echo "rhino-pkg-git já está instalado."
+    fi
+}
+
+# Instala dependências
+install_dependencies
+
+# Solicita o nome do pacote ao usuário
+package=$(zenity --entry --title="Gerenciador de Pacotes" --text="Digite o nome do pacote:")
+
+# Verifica se o usuário cancelou
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+# Verifica se o pacote está instalado
+if check_installed "$package"; then
+    if zenity --question --title="Remover Pacote" --text="O pacote '$package' está instalado. Deseja removê-lo?"; then
+        rpk remove "$package" && zenity --info --text="Pacote '$package' removido." || zenity --error --text="Erro ao remover o pacote '$package'."
+    fi
+else
+    if zenity --question --title="Instalar Pacote" --text="O pacote '$package' não está instalado. Deseja instalá-lo?"; then
+        rpk install "$package" && zenity --info --text="Pacote '$package' instalado." || zenity --error --text="Erro ao instalar o pacote '$package'."
+    fi
+fi
+
